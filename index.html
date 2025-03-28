@@ -1,46 +1,68 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>Free Voice Bot</title>
+  <title>Voice Bot</title>
   <style>
-    body { font-family: Arial; text-align: center; padding: 2rem; }
-    button { 
-      padding: 15px; 
-      font-size: 18px; 
-      background: #4CAF50; 
-      color: white; 
-      border: none; 
+    button {
+      padding: 12px 24px;
+      font-size: 16px;
+      background: #4CAF50;
+      color: white;
+      border: none;
       border-radius: 8px;
-      cursor: pointer; /* Makes it look clickable */
+      cursor: pointer;
+    }
+    button:disabled {
+      background: #cccccc;
     }
   </style>
 </head>
 <body>
   <h1>Interview Voice Bot</h1>
-  <!-- Fix: ID must match JavaScript (micButton) -->
   <button id="micButton">🎤 Click & Speak</button>
+  <p id="status">Ready</p>
   <div id="response"></div>
 
   <script>
-    document.getElementById("micButton").addEventListener("click", () => {
-      const recognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
+    const micButton = document.getElementById('micButton');
+    const statusText = document.getElementById('status');
+    const responseDiv = document.getElementById('response');
+    
+    micButton.addEventListener('click', function() {
+      if (!('webkitSpeechRecognition' in window)) {
+        statusText.textContent = "Error: Browser not supported. Use Chrome.";
+        return;
+      }
+      
+      const recognition = new webkitSpeechRecognition();
       recognition.lang = 'en-US';
       
-      recognition.onresult = (event) => {
-        const question = event.results[0][0].transcript.toLowerCase();
-        const ANSWERS = {
-          "life story": "I'm a self-taught developer...",
-          "superpower": "Explaining complex things simply!",
-          "growth areas": "1. Coding 2. Communication 3. Design"
-        };
+      micButton.disabled = true;
+      statusText.textContent = "Listening...";
+      
+      recognition.onresult = function(event) {
+        const transcript = event.results[0][0].transcript;
+        responseDiv.textContent = "You asked: " + transcript;
+        statusText.textContent = "Processing...";
         
-        let answer = ANSWERS[Object.keys(ANSWERS).find(key => question.includes(key))] || 
-                    "I didn't understand. Can you ask again?";
+        // Simple response logic
+        let answer = "I heard: " + transcript;
+        if (transcript.includes("superpower")) {
+          answer = "My superpower is helping people with technology!";
+        }
         
-        // Display and speak the answer
-        document.getElementById("response").textContent = answer;
-        const speech = new SpeechSynthesisUtterance(answer);
-        window.speechSynthesis.speak(speech);
+        responseDiv.textContent = answer;
+        const utterance = new SpeechSynthesisUtterance(answer);
+        window.speechSynthesis.speak(utterance);
+      };
+      
+      recognition.onerror = function(event) {
+        statusText.textContent = "Error: " + event.error;
+      };
+      
+      recognition.onend = function() {
+        micButton.disabled = false;
+        statusText.textContent = "Ready";
       };
       
       recognition.start();
