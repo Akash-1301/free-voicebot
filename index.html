@@ -4,16 +4,47 @@
   <title>Free Voice Bot</title>
   <style>
     body { font-family: Arial; text-align: center; padding: 2rem; }
-    button { padding: 15px; font-size: 18px; background: #4CAF50; color: white; border: none; border-radius: 8px; }
+    button { 
+      padding: 15px; 
+      font-size: 18px; 
+      background: #4CAF50; 
+      color: white; 
+      border: none; 
+      border-radius: 8px;
+      cursor: pointer; /* Makes it look clickable */
+    }
   </style>
 </head>
 <body>
   <h1>Interview Voice Bot</h1>
+  <!-- Fix: ID must match JavaScript (micButton) -->
   <button id="micButton">🎤 Click & Speak</button>
   <div id="response"></div>
 
   <script>
-    // (Rest of the code from earlier steps goes here)
+    document.getElementById("micButton").addEventListener("click", () => {
+      const recognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
+      recognition.lang = 'en-US';
+      
+      recognition.onresult = (event) => {
+        const question = event.results[0][0].transcript.toLowerCase();
+        const ANSWERS = {
+          "life story": "I'm a self-taught developer...",
+          "superpower": "Explaining complex things simply!",
+          "growth areas": "1. Coding 2. Communication 3. Design"
+        };
+        
+        let answer = ANSWERS[Object.keys(ANSWERS).find(key => question.includes(key))] || 
+                    "I didn't understand. Can you ask again?";
+        
+        // Display and speak the answer
+        document.getElementById("response").textContent = answer;
+        const speech = new SpeechSynthesisUtterance(answer);
+        window.speechSynthesis.speak(speech);
+      };
+      
+      recognition.start();
+    });
   </script>
 </body>
 </html>
