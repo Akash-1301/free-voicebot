@@ -1,125 +1,231 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>Enhanced Voice Bot</title>
+  <title>Interview Voice Assistant</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <style>
-    body { 
-      font-family: Arial; 
-      text-align: center; 
-      padding: 2rem;
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: #f8f9fa;
+      color: #212529;
       max-width: 800px;
       margin: 0 auto;
+      padding: 20px;
+      line-height: 1.6;
     }
-    button { 
-      padding: 12px 24px;
-      font-size: 16px;
-      background: #4CAF50;
+
+    .header {
+      text-align: center;
+      margin-bottom: 30px;
+      padding: 20px;
+      background: linear-gradient(135deg, #4CAF50, #2E7D32);
+      color: white;
+      border-radius: 10px;
+      box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+    }
+
+    h1 {
+      margin: 0;
+      font-size: 2rem;
+    }
+
+    .controls {
+      display: flex;
+      justify-content: center;
+      gap: 15px;
+      margin-bottom: 20px;
+      flex-wrap: wrap;
+    }
+
+    button {
+      background: linear-gradient(135deg, #4CAF50, #2E7D32);
       color: white;
       border: none;
-      border-radius: 8px;
+      padding: 12px 24px;
+      border-radius: 50px;
+      font-size: 1rem;
+      font-weight: 600;
       cursor: pointer;
-      margin: 10px;
+      transition: all 0.3s ease;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+      display: flex;
+      align-items: center;
+      gap: 8px;
     }
+
+    button:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+    }
+
+    button:active {
+      transform: translateY(0);
+    }
+
     select {
-      padding: 8px;
-      border-radius: 4px;
+      padding: 10px 15px;
+      border-radius: 50px;
+      border: 2px solid #e9ecef;
+      font-size: 1rem;
+      background: white;
     }
+
+    .status {
+      text-align: center;
+      color: #6c757d;
+      margin: 15px 0;
+      font-style: italic;
+    }
+
+    .response-container {
+      margin-top: 30px;
+    }
+
+    .response-card {
+      background: white;
+      border-radius: 10px;
+      padding: 20px;
+      margin-bottom: 15px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+      border-left: 4px solid #4CAF50;
+    }
+
+    .user-question {
+      color: #2E7D32;
+      font-weight: 600;
+      margin-bottom: 8px;
+    }
+
+    .bot-response {
+      color: #212529;
+    }
+
     .spinner {
       border: 4px solid rgba(0, 0, 0, 0.1);
-      width: 36px;
-      height: 36px;
-      border-radius: 50%;
       border-left-color: #4CAF50;
+      border-radius: 50%;
+      width: 30px;
+      height: 30px;
       animation: spin 1s linear infinite;
       margin: 20px auto;
       display: none;
     }
-    .response-card {
-      background: white;
-      border-radius: 8px;
-      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-      padding: 15px;
-      margin: 20px auto;
-      text-align: left;
-    }
-    .user-question {
-      color: #4CAF50;
-      font-weight: bold;
-    }
-    .bot-response {
-      margin-top: 10px;
-    }
+
     @keyframes spin {
       0% { transform: rotate(0deg); }
       100% { transform: rotate(360deg); }
     }
+
+    @media (max-width: 600px) {
+      body {
+        padding: 15px;
+      }
+      .header {
+        padding: 15px;
+      }
+      button, select {
+        width: 100%;
+        justify-content: center;
+      }
+    }
   </style>
 </head>
 <body>
-  <h1>Enhanced Interview Bot</h1>
-  
-  <select id="language">
-    <option value="en-US">English</option>
-    <option value="es-ES">Spanish</option>
-    <option value="fr-FR">French</option>
-  </select>
-  
-  <button id="micButton">🎤 Click & Speak</button>
+  <div class="header">
+    <h1>Interview Voice Assistant</h1>
+    <p>Practice your interview questions with AI</p>
+  </div>
+
+  <div class="controls">
+    <select id="language">
+      <option value="en-US">English</option>
+      <option value="es-ES">Spanish</option>
+      <option value="fr-FR">French</option>
+    </select>
+    <button id="micButton">
+      <span>🎤</span> Click & Speak
+    </button>
+  </div>
+
+  <div id="status" class="status">Press the button and ask a question</div>
   <div id="spinner" class="spinner"></div>
-  <div id="status">Ready</div>
-  <div id="response"></div>
+
+  <div id="response" class="response-container"></div>
 
   <script>
     let conversationHistory = [];
     
     document.getElementById("micButton").addEventListener("click", function() {
-      const recognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
+      // Check browser support
+      if (!('webkitSpeechRecognition' in window)) {
+        updateStatus("Error: Browser not supported. Please use Chrome.");
+        return;
+      }
+
+      const recognition = new webkitSpeechRecognition();
       recognition.lang = document.getElementById('language').value;
       
+      // UI updates
       document.getElementById('spinner').style.display = 'block';
-      document.getElementById('status').textContent = "Listening...";
+      updateStatus("Listening...");
+      this.disabled = true;
       
       recognition.onresult = function(event) {
         const question = event.results[0][0].transcript;
-        let answer = generateAnswer(question);
+        const answer = generateAnswer(question);
         
         showResponse(question, answer);
         saveToHistory(question, answer);
-        
         speak(answer);
       };
       
       recognition.onerror = function(event) {
-        document.getElementById('status').textContent = "Error: " + event.error;
+        updateStatus("Error: " + event.error);
       };
       
       recognition.onend = function() {
         document.getElementById('spinner').style.display = 'none';
-        document.getElementById('status').textContent = "Ready";
+        document.getElementById('micButton').disabled = false;
+        updateStatus("Ready for next question");
       };
       
       recognition.start();
     });
-    
+
     function generateAnswer(question) {
       const q = question.toLowerCase();
-      if (q.includes("superpower")) return "My superpower is helping people with technology!";
-      if (q.includes("grow") || q.includes("improve")) return "I'm working on: 1. Multilingual support 2. Better context understanding";
-      if (q.includes("story")) return "I was created to help people ace their interviews!";
-      return "I understood: " + question;
+      
+      // Enhanced response logic
+      if (q.includes("how are you") || q.includes("how you doing")) {
+        return "I'm doing great! Ready to help you with interview practice.";
+      }
+      if (q.includes("superpower") || q.includes("strength")) {
+        return "My superpower is helping candidates showcase their best qualities during interviews!";
+      }
+      if (q.includes("growth") || q.includes("improve")) {
+        return "I'm constantly working on: 1) Better natural language understanding 2) More personalized feedback";
+      }
+      if (q.includes("help") || q.includes("what can you do")) {
+        return "I can help you practice for interviews by answering common questions about your background, skills, and experience.";
+      }
+      if (q.includes("name") || q.includes("who are you")) {
+        return "I'm your AI Interview Assistant, here to help you prepare for job interviews!";
+      }
+      
+      // Default response
+      return "I understood: \"" + question + "\". Could you ask an interview-related question?";
     }
-    
+
     function showResponse(question, answer) {
       const responseHTML = `
         <div class="response-card">
           <div class="user-question">You: ${question}</div>
-          <div class="bot-response">Bot: ${answer}</div>
+          <div class="bot-response">Assistant: ${answer}</div>
         </div>
       `;
       document.getElementById('response').insertAdjacentHTML('afterbegin', responseHTML);
     }
-    
+
     function saveToHistory(question, answer) {
       conversationHistory.push({
         question,
@@ -128,13 +234,18 @@
       });
       localStorage.setItem('convHistory', JSON.stringify(conversationHistory));
     }
-    
+
     function speak(text) {
       const utterance = new SpeechSynthesisUtterance(text);
+      utterance.lang = document.getElementById('language').value;
       window.speechSynthesis.speak(utterance);
     }
-    
-    // Load history on startup
+
+    function updateStatus(text) {
+      document.getElementById('status').textContent = text;
+    }
+
+    // Load previous conversation on startup
     window.addEventListener('load', () => {
       const savedHistory = localStorage.getItem('convHistory');
       if (savedHistory) {
